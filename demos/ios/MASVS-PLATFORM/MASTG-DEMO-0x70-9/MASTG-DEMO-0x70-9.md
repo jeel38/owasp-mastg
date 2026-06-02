@@ -1,0 +1,37 @@
+---
+platform: ios
+title: Tracing Outgoing App Links with Frida
+id: MASTG-DEMO-0x70-9
+code: [swift]
+test: MASTG-TEST-0x70-9
+tools: [MASTG-TOOL-0039]
+---
+
+## Sample
+
+The code snippet below shows sample code that blindly passes an unvalidated URL into `UIApplication.shared.open`, allowing the application to trigger external apps or URI schemes.
+
+{{ ../MASTG-DEMO-0x70-1/MastgTest.swift }}
+
+## Steps
+
+1. Install the app on a device (@MASTG-TECH-0056).
+2. Make sure you have @MASTG-TOOL-0039 installed on your machine and the frida-server running on the device.
+3. Run `run.sh` to spawn the app with Frida and load the outgoing URL tracing script.
+4. Interact with the app to trigger the logic that routes the user to an external link.
+5. Stop the script by pressing `Ctrl+C`.
+
+{{ run.sh # script.js }}
+
+## Observation
+
+The output contains the outgoing URL captured when the application attempts to hand off an external URL scheme to the operating system.
+
+{{ output.txt }}
+
+## Evaluation
+
+The test fails because the application dynamically executes an outgoing link containing an untrusted custom scheme without sanitization. The output confirms the following behavior:
+
+- The `[!] DYNAMIC ALERT (Outgoing): App is executing an outgoing link:`, confirms the `-[UIApplication openURL:options:completionHandler:]` API was invoked by the application.
+- The app blindly attempted to trigger a dangerous, unregistered URI scheme `-> malicious-app://steal-data?payload=123`, making it vulnerable to URI Scheme Hijacking.
